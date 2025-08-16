@@ -758,27 +758,45 @@
                 
                 // 处理下载逻辑
                 function finishDownload() {
-                    // 使用toBlob而不是toDataURL，更适合移动端
-                    canvas.toBlob(function(blob) {
-                        // 创建Blob URL
-                        const url = URL.createObjectURL(blob);
-                        
-                        // 创建下载链接
-                        const link = document.createElement('a');
-                        link.download = `background-${new Date().getTime()}.png`;
-                        link.href = url;
-                        link.type = 'image/png'; // 明确指定MIME类型
-                        
-                        // 添加到DOM并触发点击
-                        document.body.appendChild(link);
-                        link.click();
-                        
-                        // 清理
-                        setTimeout(() => {
-                            document.body.removeChild(link);
-                            URL.revokeObjectURL(url);
-                        }, 100);
-                    }, 'image/png', 1.0);
+                    // 检测是否为移动设备
+                    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+                    
+                    if (isMobile) {
+                        // 移动端：直接打开图片让用户手动保存
+                        const dataURL = canvas.toDataURL('image/png');
+                        const newWindow = window.open();
+                        newWindow.document.write(`
+                            <html>
+                                <head><title>保存图片</title></head>
+                                <body style="margin:0;padding:20px;text-align:center;background:#f0f0f0;">
+                                    <h3>长按图片保存到相册</h3>
+                                    <img src="${dataURL}" style="max-width:100%;height:auto;border:1px solid #ccc;" />
+                                </body>
+                            </html>
+                        `);
+                    } else {
+                        // 桌面端：使用Blob下载
+                        canvas.toBlob(function(blob) {
+                            // 创建Blob URL
+                            const url = URL.createObjectURL(blob);
+                            
+                            // 创建下载链接
+                            const link = document.createElement('a');
+                            link.download = `background-${new Date().getTime()}.png`;
+                            link.href = url;
+                            link.type = 'image/png';
+                            
+                            // 添加到DOM并触发点击
+                            document.body.appendChild(link);
+                            link.click();
+                            
+                            // 清理
+                            setTimeout(() => {
+                                document.body.removeChild(link);
+                                URL.revokeObjectURL(url);
+                            }, 100);
+                        }, 'image/png', 1.0);
+                    }
                 }
             }
             // 重置应用
