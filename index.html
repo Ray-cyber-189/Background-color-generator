@@ -612,17 +612,18 @@
                         
                         return `background-image: ${backgrounds.join(', ')}; background-size: 100% 100%; background-repeat: no-repeat;`;
                     } else if (appState.distribution === 'vertical') {
-                        // 垂直分布 - 平均分配高度
-                        let backgrounds = [];
-                        const segmentHeight = 100 / appState.colorCount;
+                        // 垂直分布 - 平均分配高度，颜色1在最上面，颜色2在中间，颜色3在最下面
+                        let colorStops = [];
+                        const step = 100 / appState.colors.length;
                         
                         appState.colors.forEach((color, index) => {
-                            const startPos = index * segmentHeight;
-                            const endPos = startPos + segmentHeight;
-                            backgrounds.push(`linear-gradient(0deg, transparent ${startPos}%, ${color} ${startPos}%, ${color} ${endPos}%, transparent ${endPos}%)`);
+                            const startPos = index * step;
+                            const endPos = (index + 1) * step;
+                            colorStops.push(`${color} ${startPos}%`);
+                            colorStops.push(`${color} ${endPos}%`);
                         });
                         
-                        return `background-image: ${backgrounds.join(', ')}; background-size: 100% 100%; background-repeat: no-repeat;`;
+                        return `background: linear-gradient(to bottom, ${colorStops.join(', ')});`;
                     } else if (appState.distribution === 'diagonal') {
                         // 对角线分布 - 纯色分段，支持线性和径向
                         const angle = getDiagonalAngle();
