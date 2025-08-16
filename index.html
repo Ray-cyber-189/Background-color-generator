@@ -727,27 +727,59 @@
                 canvas.width = exportWidth;
                 canvas.height = exportHeight;
                 
-                // 创建一个临时div用于生成背景
-                const tempDiv = document.createElement('div');
-                tempDiv.style.width = `${exportWidth}px`;
-                tempDiv.style.height = `${exportHeight}px`;
-                tempDiv.style.position = 'absolute';
-                tempDiv.style.top = '-9999px';
-                tempDiv.style.left = '-9999px';
-                tempDiv.style.cssText += getBackgroundCSS();
-                document.body.appendChild(tempDiv);
-                
-                // 使用html2canvas库将div内容绘制到canvas
-                html2canvas(tempDiv).then(canvas => {
-                    // 创建下载链接
-                    const link = document.createElement('a');
-                    link.download = `background-${new Date().getTime()}.png`;
-                    link.href = canvas.toDataURL('image/png');
-                    link.click();
+                // 直接在canvas上绘制背景，而不是使用html2canvas
+                if (appState.mode === 'solid' && appState.colorCount === 1) {
+                    // 纯色背景
+                    ctx.fillStyle = appState.colors[0];
+                    ctx.fillRect(0, 0, exportWidth, exportHeight);
+                    finishDownload();
+                } else {
+                    // 对于复杂背景，仍然使用html2canvas但改进下载方式
+                    const tempDiv = document.createElement('div');
+                    tempDiv.style.width = `${exportWidth}px`;
+                    tempDiv.style.height = `${exportHeight}px`;
+                    tempDiv.style.position = 'absolute';
+                    tempDiv.style.top = '-9999px';
+                    tempDiv.style.left = '-9999px';
+                    tempDiv.style.cssText += getBackgroundCSS();
+                    document.body.appendChild(tempDiv);
                     
-                    // 清理临时元素
-                    document.body.removeChild(tempDiv);
-                });
+                    html2canvas(tempDiv).then(renderedCanvas => {
+                        // 将html2canvas的结果复制到我们的canvas
+                        ctx.drawImage(renderedCanvas, 0, 0);
+                        document.body.removeChild(tempDiv);
+                        finishDownload();
+                    }).catch(error => {
+                        console.error("渲染失败:", error);
+                        document.body.removeChild(tempDiv);
+                        alert("图片生成失败，请尝试其他浏览器");
+                    });
+                }
+                
+                // 处理下载逻辑
+                function finishDownload() {
+                    // 使用toBlob而不是toDataURL，更适合移动端
+                    canvas.toBlob(function(blob) {
+                        // 创建Blob URL
+                        const url = URL.createObjectURL(blob);
+                        
+                        // 创建下载链接
+                        const link = document.createElement('a');
+                        link.download = `background-${new Date().getTime()}.png`;
+                        link.href = url;
+                        link.type = 'image/png'; // 明确指定MIME类型
+                        
+                        // 添加到DOM并触发点击
+                        document.body.appendChild(link);
+                        link.click();
+                        
+                        // 清理
+                        setTimeout(() => {
+                            document.body.removeChild(link);
+                            URL.revokeObjectURL(url);
+                        }, 100);
+                    }, 'image/png', 1.0);
+                }
             }
             // 重置应用
             function resetApp() {
