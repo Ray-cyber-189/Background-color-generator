@@ -727,77 +727,27 @@
                 canvas.width = exportWidth;
                 canvas.height = exportHeight;
                 
-                // 直接在canvas上绘制背景，而不是使用html2canvas
-                if (appState.mode === 'solid' && appState.colorCount === 1) {
-                    // 纯色背景
-                    ctx.fillStyle = appState.colors[0];
-                    ctx.fillRect(0, 0, exportWidth, exportHeight);
-                    finishDownload();
-                } else {
-                    // 对于复杂背景，仍然使用html2canvas但改进下载方式
-                    const tempDiv = document.createElement('div');
-                    tempDiv.style.width = `${exportWidth}px`;
-                    tempDiv.style.height = `${exportHeight}px`;
-                    tempDiv.style.position = 'absolute';
-                    tempDiv.style.top = '-9999px';
-                    tempDiv.style.left = '-9999px';
-                    tempDiv.style.cssText += getBackgroundCSS();
-                    document.body.appendChild(tempDiv);
-                    
-                    html2canvas(tempDiv).then(renderedCanvas => {
-                        // 将html2canvas的结果复制到我们的canvas
-                        ctx.drawImage(renderedCanvas, 0, 0);
-                        document.body.removeChild(tempDiv);
-                        finishDownload();
-                    }).catch(error => {
-                        console.error("渲染失败:", error);
-                        document.body.removeChild(tempDiv);
-                        alert("图片生成失败，请尝试其他浏览器");
-                    });
-                }
+                // 创建一个临时div用于生成背景
+                const tempDiv = document.createElement('div');
+                tempDiv.style.width = `${exportWidth}px`;
+                tempDiv.style.height = `${exportHeight}px`;
+                tempDiv.style.position = 'absolute';
+                tempDiv.style.top = '-9999px';
+                tempDiv.style.left = '-9999px';
+                tempDiv.style.cssText += getBackgroundCSS();
+                document.body.appendChild(tempDiv);
                 
-                // 处理下载逻辑
-                function finishDownload() {
-                    // 检测是否为移动设备
-                    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+                // 使用html2canvas库将div内容绘制到canvas
+                html2canvas(tempDiv).then(canvas => {
+                    // 创建下载链接
+                    const link = document.createElement('a');
+                    link.download = `background-${new Date().getTime()}.png`;
+                    link.href = canvas.toDataURL('image/png');
+                    link.click();
                     
-                    if (isMobile) {
-                        // 移动端：直接打开图片让用户手动保存
-                        const dataURL = canvas.toDataURL('image/png');
-                        const newWindow = window.open();
-                        newWindow.document.write(`
-                            <html>
-                                <head><title>保存图片</title></head>
-                                <body style="margin:0;padding:20px;text-align:center;background:#f0f0f0;">
-                                    <h3>长按图片保存到相册</h3>
-                                    <img src="${dataURL}" style="max-width:100%;height:auto;border:1px solid #ccc;" />
-                                </body>
-                            </html>
-                        `);
-                    } else {
-                        // 桌面端：使用Blob下载
-                        canvas.toBlob(function(blob) {
-                            // 创建Blob URL
-                            const url = URL.createObjectURL(blob);
-                            
-                            // 创建下载链接
-                            const link = document.createElement('a');
-                            link.download = `background-${new Date().getTime()}.png`;
-                            link.href = url;
-                            link.type = 'image/png';
-                            
-                            // 添加到DOM并触发点击
-                            document.body.appendChild(link);
-                            link.click();
-                            
-                            // 清理
-                            setTimeout(() => {
-                                document.body.removeChild(link);
-                                URL.revokeObjectURL(url);
-                            }, 100);
-                        }, 'image/png', 1.0);
-                    }
-                }
+                    // 清理临时元素
+                    document.body.removeChild(tempDiv);
+                });
             }
             // 重置应用
             function resetApp() {
