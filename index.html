@@ -180,8 +180,17 @@
                         <i class="fa fa-plus mr-1"></i> 添加颜色
                     </button>
                     <button id="download-png-btn" class="flex items-center text-sm px-3 py-1.5 rounded bg-primary text-white btn-hover">
-                        <i class="fa fa-download mr-1"></i> 下载图片
+                        <i class="fa fa-image mr-1"></i> 点击生成图片后<br>长按图片→右键保存到手机
                     </button>
+                </div>
+            </div>
+            
+            <!-- 生成的图片显示区域 -->
+            <div id="generated-image-container" class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 hidden">
+                <h3 class="text-md font-medium mb-3">生成的图片</h3>
+                <div class="text-center">
+                    <p class="text-sm text-gray-500 dark:text-gray-400 mb-3">长按图片保存到相册，或右键选择"图片另存为"</p>
+                    <img id="generated-image" class="max-w-full h-auto rounded-lg shadow-md mx-auto border border-gray-200 dark:border-gray-700" style="max-height: 400px;" />
                 </div>
             </div>
         </section>
@@ -241,6 +250,10 @@
                 // 颜色控制
                 colorList: document.getElementById('color-list'),
                 addColorBtn: document.getElementById('add-color-btn'),
+                
+                // 生成图片显示
+                generatedImageContainer: document.getElementById('generated-image-container'),
+                generatedImage: document.getElementById('generated-image'),
                 
                 // 其他
                 downloadPngBtn: document.getElementById('download-png-btn'),
@@ -715,7 +728,7 @@
                 const css = getBackgroundCSS();
                 elements.previewCanvas.style.cssText = elements.previewCanvas.style.cssText.replace(/background[^;]+;/g, '') + css;
             }
-            // 下载为PNG
+            // 生成并显示PNG图片
             function downloadAsPNG() {
                 // 创建一个临时canvas元素
                 const canvas = document.createElement('canvas');
@@ -738,14 +751,28 @@
                 document.body.appendChild(tempDiv);
                 
                 // 使用html2canvas库将div内容绘制到canvas
-                html2canvas(tempDiv).then(canvas => {
-                    // 创建下载链接
-                    const link = document.createElement('a');
-                    link.download = `background-${new Date().getTime()}.png`;
-                    link.href = canvas.toDataURL('image/png');
-                    link.click();
+                html2canvas(tempDiv).then(renderedCanvas => {
+                    // 获取图片数据URL
+                    const dataURL = renderedCanvas.toDataURL('image/png');
+                    
+                    // 在页面下方显示生成的图片
+                    elements.generatedImage.src = dataURL;
+                    elements.generatedImage.alt = `背景图片-${new Date().getTime()}`;
+                    elements.generatedImageContainer.classList.remove('hidden');
+                    
+                    // 滚动到图片位置
+                    setTimeout(() => {
+                        elements.generatedImageContainer.scrollIntoView({ 
+                            behavior: 'smooth', 
+                            block: 'start' 
+                        });
+                    }, 100);
                     
                     // 清理临时元素
+                    document.body.removeChild(tempDiv);
+                }).catch(error => {
+                    console.error("图片生成失败:", error);
+                    alert("图片生成失败，请重试");
                     document.body.removeChild(tempDiv);
                 });
             }
