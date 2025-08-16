@@ -1,0 +1,824 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>背景生成器</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#3B82F6',
+                        secondary: '#64748B',
+                        neutral: '#F1F5F9',
+                        dark: '#1E293B'
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+            .color-stop {
+                width: 22px;
+                height: 22px;
+                border: 2px solid white;
+                border-radius: 50%;
+                cursor: pointer;
+                transition: transform 0.2s, box-shadow 0.2s;
+                box-shadow: 0 0 0 1px rgba(0,0,0,0.2);
+            }
+            .color-stop:hover {
+                transform: scale(1.1);
+            }
+            .color-stop.active {
+                box-shadow: 0 0 0 2px theme('colors.primary');
+            }
+            .tab-active {
+                @apply bg-primary text-white;
+            }
+            .btn-active {
+                @apply bg-primary text-white border-primary;
+            }
+            .btn-hover {
+                @apply hover:bg-gray-200 dark:hover:bg-gray-700 transition-all duration-200;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800 dark:bg-dark dark:text-gray-100 min-h-screen flex flex-col">
+    <!-- 顶部导航栏 -->
+    <header class="bg-white dark:bg-gray-800 shadow-sm py-3 px-4">
+        <div class="container mx-auto flex justify-between items-center">
+            <div class="flex items-center space-x-2">
+                <i class="fa fa-paint-brush text-primary text-2xl"></i>
+                <h1 class="text-xl font-bold">背景生成器</h1>
+            </div>
+            <div class="flex items-center space-x-4">
+                <button id="reset-btn" class="flex items-center text-sm px-3 py-1.5 rounded bg-gray-200 dark:bg-gray-700 btn-hover">
+                    <i class="fa fa-refresh mr-1"></i> 重置
+                </button>
+                <button id="theme-toggle" class="p-2 rounded-full btn-hover">
+                    <i class="fa fa-moon-o dark:hidden"></i>
+                    <i class="fa fa-sun-o hidden dark:inline"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+    <!-- 主内容区 -->
+    <main class="flex-1 container mx-auto p-4 flex flex-col md:flex-row gap-6">
+        <!-- 左侧面板：功能类型和预设 -->
+        <section class="w-full md:w-64 flex flex-col gap-4">
+            <!-- 背景类型切换 -->
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm overflow-hidden">
+                <div class="flex">
+                    <button id="solid-tab" class="tab-active flex-1 py-3 px-4 transition-all duration-200">纯色背景</button>
+                    <button id="gradient-tab" class="flex-1 py-3 px-4 bg-gray-100 dark:bg-gray-700 btn-hover">渐变背景</button>
+                </div>
+                
+                <!-- 渐变类型选择（纯色和渐变模式都显示） -->
+                <div id="gradient-type-container" class="p-4 border-t border-gray-100 dark:border-gray-700">
+                    <h3 class="text-sm font-medium mb-2 text-gray-500 dark:text-gray-400">渐变类型</h3>
+                    <div class="grid grid-cols-2 gap-2">
+                        <button class="gradient-type-btn btn-active flex items-center justify-center gap-1 px-3 py-2 rounded border border-gray-200 dark:border-gray-700 btn-hover" data-type="linear">
+                            <i class="fa fa-arrows-h"></i>
+                            <span class="text-sm">线性</span>
+                        </button>
+                        <button class="gradient-type-btn flex items-center justify-center gap-1 px-3 py-2 rounded border border-gray-200 dark:border-gray-700 btn-hover" data-type="radial">
+                            <i class="fa fa-circle-o"></i>
+                            <span class="text-sm">径向</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <!-- 颜色数量选择 -->
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4">
+                <h3 class="text-sm font-medium mb-2 text-gray-500 dark:text-gray-400">颜色数量</h3>
+                <div id="color-count-container" class="flex flex-wrap gap-2">
+                    <button class="color-count-btn btn-active px-3 py-1.5 text-sm rounded border border-gray-300 dark:border-gray-600 btn-hover" data-count="1">单色</button>
+                    <button class="color-count-btn px-3 py-1.5 text-sm rounded border border-gray-300 dark:border-gray-600 btn-hover" data-count="2">双色</button>
+                    <button class="color-count-btn px-3 py-1.5 text-sm rounded border border-gray-300 dark:border-gray-600 btn-hover" data-count="3">三色</button>
+                    <button class="color-count-btn px-3 py-1.5 text-sm rounded border border-gray-300 dark:border-gray-600 btn-hover" data-count="4">四色</button>
+                    <button class="color-count-btn px-3 py-1.5 text-sm rounded border border-gray-300 dark:border-gray-600 btn-hover" data-count="5">五色</button>
+                </div>
+            </div>
+            <!-- 分布模式选择 -->
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4">
+                <h3 class="text-sm font-medium mb-2 text-gray-500 dark:text-gray-400">分布模式</h3>
+                <div id="distribution-container" class="grid grid-cols-2 gap-2">
+                    <button class="distribution-btn btn-active px-2 py-1.5 text-sm rounded border border-gray-300 dark:border-gray-600 btn-hover" data-mode="single">单一颜色</button>
+                    <button class="distribution-btn px-2 py-1.5 text-sm rounded border border-gray-300 dark:border-gray-600 btn-hover" data-mode="horizontal">水平分布</button>
+                    <button class="distribution-btn px-2 py-1.5 text-sm rounded border border-gray-300 dark:border-gray-600 btn-hover" data-mode="vertical">垂直分布</button>
+                    <button class="distribution-btn px-2 py-1.5 text-sm rounded border border-gray-300 dark:border-gray-600 btn-hover" data-mode="diagonal">对角线分布</button>
+                    <button class="distribution-btn px-2 py-1.5 text-sm rounded border border-gray-300 dark:border-gray-600 btn-hover" data-mode="diagonal-reverse">反对角线分布</button>
+                </div>
+            </div>
+            <!-- 比例选择 -->
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4">
+                <h3 class="text-sm font-medium mb-2 text-gray-500 dark:text-gray-400">画布比例</h3>
+                <div class="flex gap-2">
+                    <button class="ratio-btn btn-active px-3 py-1.5 text-sm rounded border border-gray-300 dark:border-gray-600 btn-hover" data-ratio="4:3">4:3</button>
+                    <button class="ratio-btn px-3 py-1.5 text-sm rounded border border-gray-300 dark:border-gray-600 btn-hover" data-ratio="9:16">9:16</button>
+                </div>
+            </div>
+        </section>
+        <!-- 中央区域：预览画布 -->
+        <section class="flex-1 flex flex-col gap-4">
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 flex-1 flex flex-col">
+                <h2 class="text-lg font-semibold mb-3">预览</h2>
+                <div class="flex-1 flex items-center justify-center">
+                    <div id="preview-container" class="relative w-full max-w-2xl">
+                        <div id="preview-canvas" class="w-full rounded-lg shadow-inner transition-all duration-300" style="padding-top: 75%; background-color: #3B82F6;">
+                            <!-- 预览区域 -->
+                        </div>
+                        <div id="canvas-dimensions" class="absolute -bottom-6 left-0 text-sm text-gray-500 dark:text-gray-400">
+                            600 × 450 px (导出: 3000 × 2250 px)
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-3 flex justify-end gap-2">
+                    <button id="update-preview-btn" class="text-sm px-3 py-1.5 bg-primary/10 text-primary rounded btn-hover flex items-center gap-1">
+                        <i class="fa fa-refresh"></i> 更新预览
+                    </button>
+                    <button id="fullscreen-btn" class="text-sm px-3 py-1.5 bg-gray-200 dark:bg-gray-700 rounded btn-hover flex items-center gap-1">
+                        <i class="fa fa-expand"></i> 全屏预览
+                    </button>
+                </div>
+            </div>
+            <!-- 颜色控制 -->
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4">
+                <h3 class="text-md font-medium mb-3">颜色设置</h3>
+                
+                
+                <!-- 颜色列表 -->
+                <div id="color-list" class="space-y-3">
+                    <div class="color-item" data-index="0">
+                        <div class="flex items-center gap-2">
+                            <label class="text-sm text-gray-500 dark:text-gray-400 w-16">颜色 1</label>
+                            <div class="flex-1 flex">
+                                <input type="color" value="#3B82F6" class="w-10 h-8 p-0 border-0 rounded-l cursor-pointer">
+                                <input type="text" value="#3B82F6" class="flex-1 h-8 border border-gray-300 dark:border-gray-700 border-l-0 rounded-r px-2 text-sm">
+                            </div>
+                            <button class="delete-color-btn p-1.5 text-gray-400 hover:text-red-500 transition hidden">
+                                <i class="fa fa-minus-circle"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mt-3 flex justify-between">
+                    <button id="add-color-btn" class="flex items-center text-sm px-3 py-1.5 rounded bg-primary/10 text-primary btn-hover">
+                        <i class="fa fa-plus mr-1"></i> 添加颜色
+                    </button>
+                    <button id="download-png-btn" class="flex items-center text-sm px-3 py-1.5 rounded bg-primary text-white btn-hover">
+                        <i class="fa fa-download mr-1"></i> 下载图片
+                    </button>
+                </div>
+            </div>
+        </section>
+    </main>
+    <!-- 全屏预览模态框 -->
+    <div id="fullscreen-modal" class="fixed inset-0 bg-black/90 z-50 hidden items-center justify-center">
+        <div id="fullscreen-content" class="max-w-4xl max-h-[90vh] rounded-lg overflow-hidden">
+            <div class="absolute top-4 right-4 z-10">
+                <button id="close-fullscreen" class="bg-white/20 hover:bg-white/30 text-white p-2 rounded-full backdrop-blur-sm transition">
+                    <i class="fa fa-times"></i>
+                </button>
+            </div>
+            <div id="fullscreen-preview" class="w-full h-full relative" style="background-color: #3B82F6;"></div>
+        </div>
+    </div>
+    <script>
+        // 确保DOM完全加载后执行
+        document.addEventListener('DOMContentLoaded', function() {
+            // 应用状态管理
+            const appState = {
+                mode: 'solid', // 'solid' 或 'gradient'
+                gradientType: 'linear', // 'linear' 或 'radial'
+                colorCount: 1,
+                distribution: 'single',
+                colors: ['#3B82F6'],
+                positions: [0], // 仅渐变模式使用，百分比
+                activeColorIndex: 0,
+                canvasRatio: '4:3',
+                canvasWidth: 600,
+                canvasHeight: 450,
+                exportScale: 5, // 导出时的缩放倍数
+                dpi: 96 // 目标分辨率
+            };
+            // DOM 元素
+            const elements = {
+                // 切换标签
+                solidTab: document.getElementById('solid-tab'),
+                gradientTab: document.getElementById('gradient-tab'),
+                gradientTypeContainer: document.getElementById('gradient-type-container'),
+                gradientTypeBtns: document.querySelectorAll('.gradient-type-btn'),
+                
+                // 颜色数量和分布模式
+                colorCountBtns: document.querySelectorAll('.color-count-btn'),
+                distributionBtns: document.querySelectorAll('.distribution-btn'),
+                
+                // 画布和预览
+                previewCanvas: document.getElementById('preview-canvas'),
+                previewContainer: document.getElementById('preview-container'),
+                canvasDimensions: document.getElementById('canvas-dimensions'),
+                fullscreenBtn: document.getElementById('fullscreen-btn'),
+                fullscreenModal: document.getElementById('fullscreen-modal'),
+                fullscreenContent: document.getElementById('fullscreen-content'),
+                fullscreenPreview: document.getElementById('fullscreen-preview'),
+                closeFullscreen: document.getElementById('close-fullscreen'),
+                updatePreviewBtn: document.getElementById('update-preview-btn'),
+                
+                // 颜色控制
+                colorList: document.getElementById('color-list'),
+                addColorBtn: document.getElementById('add-color-btn'),
+                
+                // 其他
+                downloadPngBtn: document.getElementById('download-png-btn'),
+                resetBtn: document.getElementById('reset-btn'),
+                themeToggle: document.getElementById('theme-toggle'),
+                ratioBtns: document.querySelectorAll('.ratio-btn')
+            };
+            // 初始化应用
+            function initApp() {
+                setupEventListeners();
+                updateCanvasDimensions();
+                updateColorList();
+                updatePreview();
+                checkThemePreference();
+            }
+            // 设置事件监听器 - 使用更可靠的绑定方式
+            function setupEventListeners() {
+                // 确保所有按钮都能正确绑定事件
+                if (elements.solidTab) {
+                    elements.solidTab.addEventListener('click', function() {
+                        appState.mode = 'solid';
+                        updateModeTabs();
+                        updateColorList();
+                        updatePreview();
+                    });
+                }
+                if (elements.gradientTab) {
+                    elements.gradientTab.addEventListener('click', function() {
+                        appState.mode = 'gradient';
+                        updateModeTabs();
+                        updateColorList();
+                        updatePreview();
+                    });
+                }
+                // 渐变类型切换
+                elements.gradientTypeBtns.forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        elements.gradientTypeBtns.forEach(b => b.classList.remove('btn-active'));
+                        this.classList.add('btn-active');
+                        appState.gradientType = this.dataset.type;
+                        updatePreview();
+                    });
+                });
+                // 颜色数量切换
+                elements.colorCountBtns.forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        const count = parseInt(this.dataset.count);
+                        
+                        // 不再阻止渐变模式下选择单色
+                        // 但在UI更新后会自动添加第二种颜色
+                        
+                        elements.colorCountBtns.forEach(b => b.classList.remove('btn-active'));
+                        this.classList.add('btn-active');
+                        appState.colorCount = count;
+                        
+                        // 调整颜色数组
+                        while (appState.colors.length > count) {
+                            appState.colors.pop();
+                            appState.positions.pop();
+                        }
+                        while (appState.colors.length < count) {
+                            // 生成与现有颜色不同的随机颜色
+                            let randomColor;
+                            do {
+                                randomColor = '#' + Math.floor(Math.random()*16777215).toString(16).padStart(6, '0');
+                            } while (appState.colors.includes(randomColor));
+                            appState.colors.push(randomColor);
+                            
+                            // 计算位置
+                            if (appState.mode === 'gradient') {
+                                if (count === 1) {
+                                    appState.positions.push(0);
+                                } else {
+                                    // 均匀分布所有颜色
+                                    const step = 100 / (count - 1);
+                                    appState.positions.push(step * (appState.colors.length - 1));
+                                }
+                            } else {
+                                appState.positions.push(0);
+                            }
+                        }
+                        
+                        // 渐变模式下单色的特殊处理在getBackgroundCSS中处理，这里不自动添加颜色
+                        
+                        appState.activeColorIndex = 0;
+                        updateColorList();
+                        updatePreview();
+                    });
+                });
+                // 分布模式切换
+                elements.distributionBtns.forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        const mode = this.dataset.mode;
+                        
+                        elements.distributionBtns.forEach(b => b.classList.remove('btn-active'));
+                        this.classList.add('btn-active');
+                        appState.distribution = mode;
+                        updatePreview();
+                    });
+                });
+                // 比例切换
+                elements.ratioBtns.forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        elements.ratioBtns.forEach(b => b.classList.remove('btn-active'));
+                        this.classList.add('btn-active');
+                        appState.canvasRatio = this.dataset.ratio;
+                        updateCanvasDimensions();
+                        updatePreview();
+                    });
+                });
+                // 添加颜色按钮
+                if (elements.addColorBtn) {
+                    elements.addColorBtn.addEventListener('click', function() {
+                        // 检查最大颜色数（最多5种）
+                        if (appState.colors.length >= 5) return;
+                        
+                        // 渐变模式下至少需要2种颜色
+                        if (appState.mode === 'gradient' && appState.colors.length < 1) {
+                            appState.colors.push('#3B82F6');
+                            appState.positions.push(0);
+                        }
+                        
+                        // 生成与现有颜色不同的随机颜色
+                        let randomColor;
+                        do {
+                            randomColor = '#' + Math.floor(Math.random()*16777215).toString(16).padStart(6, '0');
+                        } while (appState.colors.includes(randomColor));
+                        
+                        // 计算新位置（渐变模式）
+                        let newPosition = 100;
+                        if (appState.mode === 'gradient' && appState.positions.length > 0) {
+                            newPosition = 100 / (appState.colors.length) * appState.colors.length;
+                            if (newPosition > 100) newPosition = 100;
+                        }
+                        
+                        appState.colors.push(randomColor);
+                        appState.positions.push(newPosition);
+                        appState.colorCount = appState.colors.length;
+                        appState.activeColorIndex = appState.colors.length - 1;
+                        
+                        if (appState.mode === 'gradient') {
+                            sortColorStops();
+                        }
+                        
+                        // 更新按钮状态
+                        updateColorCountUI();
+                        updateColorList();
+                        updatePreview();
+                    });
+                }
+                // 颜色列表事件委托
+                if (elements.colorList) {
+                    elements.colorList.addEventListener('click', function(e) {
+                        // 删除颜色
+                        if (e.target.closest('.delete-color-btn')) {
+                            const colorItem = e.target.closest('.color-item');
+                            const index = parseInt(colorItem.dataset.index);
+                            deleteColor(index);
+                            return;
+                        }
+                    });
+                    // 颜色输入事件委托
+                    elements.colorList.addEventListener('input', function(e) {
+                        if (e.target.type === 'color' || e.target.type === 'text') {
+                            const colorItem = e.target.closest('.color-item');
+                            if (colorItem) {
+                                const index = parseInt(colorItem.dataset.index);
+                                const inputs = colorItem.querySelectorAll('input[type="color"], input[type="text"]');
+                                const colorInput = inputs[0];
+                                const textInput = inputs[1];
+                                
+                                // 同步颜色选择器和文本框
+                                if (e.target.type === 'color') {
+                                    textInput.value = colorInput.value.toUpperCase();
+                                } else {
+                                    // 验证颜色格式
+                                    if (/^#[0-9A-F]{6}$/i.test(textInput.value)) {
+                                        colorInput.value = textInput.value;
+                                    } else {
+                                        textInput.value = colorInput.value.toUpperCase();
+                                    }
+                                }
+                                
+                                // 更新颜色值
+                                appState.colors[index] = colorInput.value;
+                                
+                                // 自动更新预览
+                                updatePreview();
+                            }
+                        }
+                    });
+                }
+                // 更新预览按钮
+                if (elements.updatePreviewBtn) {
+                    elements.updatePreviewBtn.addEventListener('click', updatePreview);
+                }
+                // 下载PNG
+                if (elements.downloadPngBtn) {
+                    elements.downloadPngBtn.addEventListener('click', downloadAsPNG);
+                }
+                // 全屏预览
+                if (elements.fullscreenBtn) {
+                    elements.fullscreenBtn.addEventListener('click', function() {
+                        elements.fullscreenModal.style.display = 'flex';
+                        elements.fullscreenPreview.style.cssText = getBackgroundCSS();
+                        document.body.style.overflow = 'hidden';
+                    });
+                }
+                // 关闭全屏预览
+                if (elements.closeFullscreen) {
+                    elements.closeFullscreen.addEventListener('click', function() {
+                        elements.fullscreenModal.style.display = 'none';
+                        document.body.style.overflow = 'auto';
+                    });
+                }
+                // 重置按钮
+                if (elements.resetBtn) {
+                    elements.resetBtn.addEventListener('click', resetApp);
+                }
+                // 主题切换
+                if (elements.themeToggle) {
+                    elements.themeToggle.addEventListener('click', toggleTheme);
+                }
+            }
+            // 更新模式标签状态
+            function updateModeTabs() {
+                if (appState.mode === 'solid') {
+                    elements.solidTab.classList.add('tab-active');
+                    elements.solidTab.classList.remove('bg-gray-100', 'dark:bg-gray-700');
+                    elements.gradientTab.classList.remove('tab-active');
+                    elements.gradientTab.classList.add('bg-gray-100', 'dark:bg-gray-700');
+                } else {
+                    elements.gradientTab.classList.add('tab-active');
+                    elements.gradientTab.classList.remove('bg-gray-100', 'dark:bg-gray-700');
+                    elements.solidTab.classList.remove('tab-active');
+                    elements.solidTab.classList.add('bg-gray-100', 'dark:bg-gray-700');
+                }
+                // 渐变类型控件在两种模式下都显示
+                elements.gradientTypeContainer.classList.remove('hidden');
+            }
+            // 更新颜色数量UI
+            function updateColorCountUI() {
+                elements.colorCountBtns.forEach(btn => {
+                    if (parseInt(btn.dataset.count) === appState.colorCount) {
+                        btn.classList.add('btn-active');
+                    } else {
+                        btn.classList.remove('btn-active');
+                    }
+                });
+            }
+            // 删除颜色
+            function deleteColor(index) {
+                // 确保至少保留最小数量的颜色
+                const minColors = appState.mode === 'gradient' ? 2 : 1;
+                if (appState.colors.length <= minColors) return;
+                
+                // 移除颜色
+                appState.colors.splice(index, 1);
+                appState.positions.splice(index, 1);
+                appState.colorCount = appState.colors.length;
+                
+                // 调整活跃索引
+                if (appState.activeColorIndex >= index && appState.activeColorIndex > 0) {
+                    appState.activeColorIndex--;
+                }
+                
+                // 更新UI
+                updateColorCountUI();
+                updateColorList();
+                updatePreview();
+            }
+            // 排序颜色节点（确保位置按升序排列）
+            function sortColorStops() {
+                if (appState.mode !== 'gradient' || appState.colors.length <= 1) return;
+                
+                // 创建位置和颜色的配对数组
+                const pairs = appState.positions.map((pos, index) => ({
+                    pos,
+                    color: appState.colors[index]
+                }));
+                
+                // 按位置排序
+                pairs.sort((a, b) => a.pos - b.pos);
+                
+                // 更新状态
+                appState.positions = pairs.map(p => p.pos);
+                appState.colors = pairs.map(p => p.color);
+            }
+            // 更新画布尺寸
+            function updateCanvasDimensions() {
+                const [widthRatio, heightRatio] = appState.canvasRatio.split(':').map(Number);
+                const baseWidth = 600;
+                
+                appState.canvasWidth = baseWidth;
+                appState.canvasHeight = Math.round(baseWidth * heightRatio / widthRatio);
+                
+                // 更新预览容器的 padding-top 来维持比例
+                const percentage = (appState.canvasHeight / appState.canvasWidth) * 100;
+                elements.previewCanvas.style.paddingTop = `${percentage}%`;
+                
+                // 更新尺寸显示（包含导出尺寸）
+                const exportWidth = appState.canvasWidth * appState.exportScale;
+                const exportHeight = appState.canvasHeight * appState.exportScale;
+                elements.canvasDimensions.textContent = `${appState.canvasWidth} × ${appState.canvasHeight} px (导出: ${exportWidth} × ${exportHeight} px)`;
+            }
+            // 更新颜色列表
+            function updateColorList() {
+                elements.colorList.innerHTML = '';
+                
+                appState.colors.forEach((color, index) => {
+                    const colorItem = document.createElement('div');
+                    colorItem.className = 'color-item';
+                    colorItem.dataset.index = index;
+                    
+                    colorItem.innerHTML = `
+                        <div class="flex items-center gap-2">
+                            <label class="text-sm text-gray-500 dark:text-gray-400 w-16">颜色 ${index + 1}</label>
+                            <div class="flex-1 flex">
+                                <input type="color" value="${color}" class="w-10 h-8 p-0 border-0 rounded-l cursor-pointer">
+                                <input type="text" value="${color.toUpperCase()}" class="flex-1 h-8 border border-gray-300 dark:border-gray-700 border-l-0 rounded-r px-2 text-sm">
+                            </div>
+                            <button class="delete-color-btn p-1.5 text-gray-400 hover:text-red-500 transition hidden">
+                                <i class="fa fa-minus-circle"></i>
+                            </button>
+                        </div>
+                    `;
+                    
+                    elements.colorList.appendChild(colorItem);
+                });
+                
+                // 更新删除按钮显示状态
+                updateDeleteButtons();
+            }
+            // 更新删除按钮显示状态（至少保留最小数量的颜色）
+            function updateDeleteButtons() {
+                const minColors = appState.mode === 'gradient' ? 2 : 1;
+                const deleteButtons = document.querySelectorAll('.delete-color-btn');
+                
+                deleteButtons.forEach((btn, index) => {
+                    if (appState.colors.length > minColors) {
+                        btn.classList.remove('hidden');
+                    } else {
+                        btn.classList.add('hidden');
+                    }
+                });
+            }
+            // 计算对角线角度
+            function getDiagonalAngle() {
+                const [widthRatio, heightRatio] = appState.canvasRatio.split(':').map(Number);
+                return Math.atan(heightRatio / widthRatio) * (180 / Math.PI);
+            }
+            
+            // 获取背景CSS
+            function getBackgroundCSS() {
+                if (appState.mode === 'solid') {
+                    // 纯色模式
+                    if (appState.colorCount === 1 || appState.distribution === 'single') {
+                        return `background-color: ${appState.colors[0]};`;
+                    } else if (appState.distribution === 'horizontal') {
+                        // 水平分布 - 平均分配宽度
+                        let backgrounds = [];
+                        const segmentWidth = 100 / appState.colorCount;
+                        
+                        appState.colors.forEach((color, index) => {
+                            const startPos = index * segmentWidth;
+                            const endPos = startPos + segmentWidth;
+                            backgrounds.push(`linear-gradient(90deg, transparent ${startPos}%, ${color} ${startPos}%, ${color} ${endPos}%, transparent ${endPos}%)`);
+                        });
+                        
+                        return `background-image: ${backgrounds.join(', ')}; background-size: 100% 100%; background-repeat: no-repeat;`;
+                    } else if (appState.distribution === 'vertical') {
+                        // 垂直分布 - 平均分配高度
+                        let backgrounds = [];
+                        const segmentHeight = 100 / appState.colorCount;
+                        
+                        appState.colors.forEach((color, index) => {
+                            const startPos = index * segmentHeight;
+                            const endPos = startPos + segmentHeight;
+                            backgrounds.push(`linear-gradient(0deg, transparent ${startPos}%, ${color} ${startPos}%, ${color} ${endPos}%, transparent ${endPos}%)`);
+                        });
+                        
+                        return `background-image: ${backgrounds.join(', ')}; background-size: 100% 100%; background-repeat: no-repeat;`;
+                    } else if (appState.distribution === 'diagonal') {
+                        // 对角线分布 - 纯色分段，支持线性和径向
+                        const angle = getDiagonalAngle();
+                        
+                        // 创建颜色停止点，每种颜色占据独立区域
+                        let colorStops = [];
+                        const step = 100 / appState.colors.length;
+                        
+                        appState.colors.forEach((color, index) => {
+                            const startPos = index * step;
+                            const endPos = (index + 1) * step;
+                            colorStops.push(`${color} ${startPos}%`);
+                            colorStops.push(`${color} ${endPos}%`);
+                        });
+                        
+                        if (appState.gradientType === 'linear') {
+                            return `background: linear-gradient(${angle}deg, ${colorStops.join(', ')});`;
+                        } else {
+                            return `background: radial-gradient(circle, ${colorStops.join(', ')});`;
+                        }
+                    } else if (appState.distribution === 'diagonal-reverse') {
+                        // 反对角线分布 - 纯色分段，支持线性和径向
+                        const angle = 180 - getDiagonalAngle();
+                        
+                        // 创建颜色停止点，每种颜色占据独立区域
+                        let colorStops = [];
+                        const step = 100 / appState.colors.length;
+                        
+                        appState.colors.forEach((color, index) => {
+                            const startPos = index * step;
+                            const endPos = (index + 1) * step;
+                            colorStops.push(`${color} ${startPos}%`);
+                            colorStops.push(`${color} ${endPos}%`);
+                        });
+                        
+                        if (appState.gradientType === 'linear') {
+                            return `background: linear-gradient(${angle}deg, ${colorStops.join(', ')});`;
+                        } else {
+                            return `background: radial-gradient(circle, ${colorStops.join(', ')});`;
+                        }
+                    }
+                } else {
+                    // 渐变模式
+                    if (appState.colors.length === 1) {
+                        // 单色情况：直接返回纯色背景
+                        return `background-color: ${appState.colors[0]};`;
+                    } else {
+                        // 多色情况：生成真正的渐变
+                        // 确保位置均匀分布 - 重新计算所有位置
+                        appState.positions = [];
+                        const step = 100 / (appState.colors.length - 1);
+                        appState.colors.forEach((_, index) => {
+                            appState.positions.push(index * step);
+                        });
+                        
+                        // 创建渐变颜色点
+                        const colorStops = appState.colors.map((color, index) => 
+                            `${color} ${appState.positions[index]}%`
+                        ).join(', ');
+                        
+                        if (appState.gradientType === 'linear') {
+                            // 线性渐变 - 根据分布模式确定方向
+                            let direction = 'to right'; // 默认水平
+                            if (appState.distribution === 'vertical') {
+                                direction = 'to bottom';
+                            } else if (appState.distribution === 'diagonal') {
+                                // 使用实际比例计算的角度
+                                const angle = getDiagonalAngle();
+                                direction = `${angle}deg`;
+                            } else if (appState.distribution === 'diagonal-reverse') {
+                                // 使用实际比例计算的反对角线角度
+                                const angle = 180 - getDiagonalAngle();
+                                direction = `${angle}deg`;
+                            }
+                            
+                            return `background: linear-gradient(${direction}, ${colorStops});`;
+                        } else {
+                            // 径向渐变
+                            return `background: radial-gradient(circle, ${colorStops});`;
+                        }
+                    }
+                }
+                
+                // 默认返回纯色
+                return `background-color: ${appState.colors[0]};`;
+            }
+            // 更新预览
+            function updatePreview() {
+                const css = getBackgroundCSS();
+                elements.previewCanvas.style.cssText = elements.previewCanvas.style.cssText.replace(/background[^;]+;/g, '') + css;
+            }
+            // 下载为PNG
+            function downloadAsPNG() {
+                // 创建一个临时canvas元素
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                
+                // 设置canvas尺寸（考虑导出缩放倍数）
+                const exportWidth = appState.canvasWidth * appState.exportScale;
+                const exportHeight = appState.canvasHeight * appState.exportScale;
+                canvas.width = exportWidth;
+                canvas.height = exportHeight;
+                
+                // 创建一个临时div用于生成背景
+                const tempDiv = document.createElement('div');
+                tempDiv.style.width = `${exportWidth}px`;
+                tempDiv.style.height = `${exportHeight}px`;
+                tempDiv.style.position = 'absolute';
+                tempDiv.style.top = '-9999px';
+                tempDiv.style.left = '-9999px';
+                tempDiv.style.cssText += getBackgroundCSS();
+                document.body.appendChild(tempDiv);
+                
+                // 使用html2canvas库将div内容绘制到canvas
+                html2canvas(tempDiv).then(canvas => {
+                    // 创建下载链接
+                    const link = document.createElement('a');
+                    link.download = `background-${new Date().getTime()}.png`;
+                    link.href = canvas.toDataURL('image/png');
+                    link.click();
+                    
+                    // 清理临时元素
+                    document.body.removeChild(tempDiv);
+                });
+            }
+            // 重置应用
+            function resetApp() {
+                // 重置状态
+                appState.mode = 'solid';
+                appState.gradientType = 'linear';
+                appState.colorCount = 1;
+                appState.distribution = 'single';
+                appState.colors = ['#3B82F6'];
+                appState.positions = [0];
+                appState.activeColorIndex = 0;
+                appState.canvasRatio = '4:3';
+                
+                // 更新UI
+                updateModeTabs();
+                updateColorCountUI();
+                elements.distributionBtns.forEach(btn => {
+                    if (btn.dataset.mode === 'single') {
+                        btn.classList.add('btn-active');
+                    } else {
+                        btn.classList.remove('btn-active');
+                    }
+                });
+                elements.gradientTypeBtns.forEach(btn => {
+                    if (btn.dataset.type === 'linear') {
+                        btn.classList.add('btn-active');
+                    } else {
+                        btn.classList.remove('btn-active');
+                    }
+                });
+                elements.ratioBtns.forEach(btn => {
+                    if (btn.dataset.ratio === '4:3') {
+                        btn.classList.add('btn-active');
+                    } else {
+                        btn.classList.remove('btn-active');
+                    }
+                });
+                
+                updateCanvasDimensions();
+                updateUI();
+            }
+            // 切换主题
+            function toggleTheme() {
+                document.documentElement.classList.toggle('dark');
+                
+                // 保存主题偏好
+                if (document.documentElement.classList.contains('dark')) {
+                    localStorage.setItem('theme', 'dark');
+                } else {
+                    localStorage.setItem('theme', 'light');
+                }
+            }
+            // 检查主题偏好
+            function checkThemePreference() {
+                if (localStorage.getItem('theme') === 'dark' || 
+                    (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                    document.documentElement.classList.add('dark');
+                } else {
+                    document.documentElement.classList.remove('dark');
+                }
+            }
+            // 更新整个UI
+            function updateUI() {
+                updateColorList();
+                updatePreview();
+            }
+            // 添加html2canvas库（用于下载功能）
+            const script = document.createElement('script');
+            script.src = 'https://html2canvas.hertzen.com/dist/html2canvas.min.js';
+            script.onload = initApp;
+            document.head.appendChild(script);
+        });
+    </script>
+</body>
+</html>
